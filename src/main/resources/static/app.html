@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="App">
+    <el-card>
+        <div slot="header" class="clearfix">
+            <span>新增</span>
+        </div>
+        <el-form :model="categoryForm" label-width="80px">
+            <el-form-item label="父分类">
+                <el-select value="">
+                    <el-option label="无" value="0"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="分类名称">
+                <el-input v-model="categoryForm.name"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="createCategory()">创建分类</el-button>
+            </el-form-item>
+        </el-form>
+    </el-card>
+    <br>
+    <el-card>
+        <div slot="header" class="clearfix">
+            <span>删除</span>
+        </div>
+        <el-form :inline="true" label-width="80px">
+            <el-select>
+                <el-option @click.native="selectCategoryDeleteId(k.categoryId)"
+                           v-for="(k,v) in categoryList"
+                           :label="k.categoryName" :value="k.categoryId"></el-option>
+            </el-select>
+            <el-form-item>
+                <el-button type="primary" @click="deleteCategory()">删除分类</el-button>
+            </el-form-item>
+        </el-form>
+    </el-card>
+    <br>
+    <el-card>
+        <div slot="header" class="clearfix">
+            <span>查看</span>
+        </div>
+        <el-table :data="categoryList" style="width: 100%">
+            <el-table-column prop="categoryName" label="分类名称" width="180"></el-table-column>
+            <el-table-column label="操作">
+                <template slot-scope="scope">
+                    <el-button @click="">编辑</el-button>
+                    <el-button>删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </el-card>
+</div>
+<script>
+    axios.interceptors.response.use((res) => res.data);
+    new Vue({
+        el: "#App",
+        data: {
+            parents: {},
+            categoryForm: {
+                parentId: 0,
+                name: "",
+            },
+
+            categoryList: [],
+            categoryDeleteId: -1,
+
+
+        },
+        methods: {
+            getCategoryList() {
+                axios.get(`/category/findChild/${0}`)
+                    .then(r => {
+                        this.categoryList = r.data;
+                    });
+            },
+            createCategory() {
+                axios.post("/category/create", this.categoryForm)
+                    .then(r => {
+                        this.successOrError(r);
+                        this.getCategoryList();
+                    });
+            },
+            selectCategoryDeleteId(id) {
+                this.categoryDeleteId = id;
+                console.log(this.categoryDeleteId);
+            },
+            deleteCategory() {
+                axios.get(`/category/delete/${this.categoryDeleteId}`)
+                    .then(r => {
+                        this.successOrError(r);
+                        this.getCategoryList();
+                        this.categoryDeleteId = -1;
+                    });
+            },
+
+            successOrError(r) {
+                if (r.code === 200) {
+                    this.$message.success(r.msg);
+                } else {
+                    this.$message.error(r.msg);
+                }
+            },
+        },
+        created() {
+            this.getCategoryList();
+        },
+    })
+</script>
+</body>
+</html>
